@@ -38,7 +38,7 @@ class OrderController {
                 date: safeGet(row, 1),
                 reference: safeGet(row, 2),
                 client: safeGet(row, 3),
-                phone:safeGet(row, 4),
+                phone: safeGet(row, 4),
                 phone2: safeGet(row, 5),
                 address: safeGet(row, 6),
                 commune: safeGet(row, 7),
@@ -51,8 +51,9 @@ class OrderController {
                 isPickup: safeGet(row, 13) === 'OUI',
                 product: safeGet(row, 10), // Adding Product
                 note: safeGet(row, 11),    // Adding Note
+                stationCode: safeGet(row, 17), // Station Code for Stop Desk
                 tracking: safeGet(row, 18), // Tracking (column S)
-            })); 
+            }));
             res.json(formattedOrders);
         } catch (error) {
             res.status(500).json({ error: error.message });
@@ -110,7 +111,7 @@ class OrderController {
                 '',         // 16: Ouvrir
                 isStopDesk ? stationCode : '', // 17: Code Station
                 ''          // 18: Tracking
-            ]; 
+            ];
             await googleSheetService.addRow(newRow, sheetName);
 
             res.status(201).json({
