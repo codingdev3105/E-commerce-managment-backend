@@ -14,13 +14,16 @@ app.use('/api', authRoutes);
 app.use('/api', orderRoutes);
 app.use('/api/noest', noestRoutes);
 
-const server = app.listen(config.PORT, () => {
-    console.log(`Server running on http://localhost:${config.PORT}`);
-});
+// Export app for Vercel
+module.exports = app;
 
-// Force keep-alive to prevent process exit (debugging measure)
-setInterval(() => { }, 10000); // 10 seconds
+// Only listen if run directly (local development)
+if (require.main === module) {
+    const server = app.listen(config.PORT, () => {
+        console.log(`Server running on http://localhost:${config.PORT}`);
+    });
 
-server.on('error', (err) => {
-    console.error('Server failed to start:', err);
-});
+    server.on('error', (err) => {
+        console.error('Server failed to start:', err);
+    });
+}
