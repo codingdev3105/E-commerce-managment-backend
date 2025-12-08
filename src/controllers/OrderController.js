@@ -81,7 +81,9 @@ class OrderController {
             } = req.body;
 
             const state = 'Nouvelle';
-            const date = new Date().toISOString().split('T')[0];
+            // Format date as DD-MM-YYYY
+            const now = new Date();
+            const date = `${String(now.getDate()).padStart(2, '0')}-${String(now.getMonth() + 1).padStart(2, '0')}-${now.getFullYear()}`;
             const sheetName = req.user.role; // Use Role as sheet name
 
             // Define final address/commune
