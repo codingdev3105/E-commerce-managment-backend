@@ -7,6 +7,7 @@ const authMiddleware = require('../middleware/authMiddleware');
 router.get('/commandes', authMiddleware, (req, res) => orderController.getOrders(req, res));
 router.post('/commandes', authMiddleware, (req, res) => orderController.createOrder(req, res));
 router.get('/references', authMiddleware, (req, res) => orderController.getReferences(req, res));
+router.get('/commandes/validation/:column', authMiddleware, (req, res) => orderController.getValidationRules(req, res));
 router.delete('/commandes/:id', authMiddleware, (req, res) => orderController.deleteOrder(req, res));
 router.put('/commandes/:id', authMiddleware, (req, res) => orderController.updateOrder(req, res));
 

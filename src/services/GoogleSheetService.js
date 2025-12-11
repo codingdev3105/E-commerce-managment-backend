@@ -103,7 +103,7 @@ class GoogleSheetService {
         try {
             const response = await this.sheets.spreadsheets.values.batchGet({
                 spreadsheetId: this.spreadsheetId,
-                ranges: ['code wilayas!A:B', 'code communes!A:B', 'code stations!A:B'],
+                ranges: ['code wilayas!A:D', 'code communes!A:B', 'code stations!A:B'],
             });
 
             const result = {};
@@ -222,6 +222,56 @@ class GoogleSheetService {
             });
         } catch (error) {
             console.error(`Error updating tracking for row ${rowIndex} in ${sheetName}:`, error);
+            throw error;
+        }
+    }
+
+    // Get Column Validation Rules
+    async getColumnValidation(sheetName = 'ystore', column = 'A') {
+        await this.connect();
+
+        if (this.mockMode) {
+            console.log(`[Mock] Getting validation rules for ${sheetName}!${column}`);
+            return { condition: { type: 'ONE_OF_LIST', values: ['Nouvelle', 'Atelier', 'Annuler'] } };
+        }
+
+        try {
+            // Get the sheetId first
+            const sheetId = await this.getSheetIdByName(sheetName);
+
+            // Request spreadsheet data with dataValidation field
+            const response = await this.sheets.spreadsheets.get({
+                spreadsheetId: this.spreadsheetId,
+                fields: 'sheets(properties(sheetId,title),data(rowData(values(dataValidation))))',
+                ranges: [`${sheetName}!${column}:${column}`]
+            });
+
+            const sheets = response.data.sheets;
+            if (!sheets || sheets.length === 0) {
+                return null;
+            }
+
+            // Find the sheet by ID
+            const targetSheet = sheets.find(s => s.properties.sheetId === sheetId);
+            if (!targetSheet || !targetSheet.data || !targetSheet.data[0]) {
+                return null;
+            }
+
+            const rowData = targetSheet.data[0].rowData;
+            if (!rowData || rowData.length === 0) {
+                return null;
+            }
+
+            // Extract validation rules from the first non-empty cell with validation
+            for (const row of rowData) {
+                if (row.values && row.values[0] && row.values[0].dataValidation) {
+                    return row.values[0].dataValidation;
+                }
+            }
+
+            return null;
+        } catch (error) {
+            console.error(`Error getting validation rules for ${sheetName}!${column}:`, error);
             throw error;
         }
     }

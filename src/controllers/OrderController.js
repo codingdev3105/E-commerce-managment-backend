@@ -10,7 +10,12 @@ class OrderController {
             const clean = (rows) => (rows && rows.length > 1) ? rows.slice(1) : [];
 
             res.json({
-                wilayas: clean(data.wilayas).map(r => ({ code: r[0], name: r[1] })),
+                wilayas: clean(data.wilayas).map(r => ({
+                    code: r[0],
+                    name: r[1],
+                    delivery_price: r[2] || '',      // Prix Domicile
+                    delivery_price_desk: r[3] || ''  // Prix Stop Desk
+                })),
                 communes: clean(data.communes).map(r => ({ name: r[0], wilaya_code: r[1] })),
                 stations: clean(data.stations).map(r => ({ name: r[0], code: r[1] }))
             });
@@ -218,6 +223,25 @@ class OrderController {
             await googleSheetService.updateRow(parseInt(rowIndex), updatedRow, sheetName);
 
             res.json({ message: 'Commande modifiée' });
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ error: error.message });
+        }
+    }
+
+    // GET /api/commandes/validation/:column
+    async getValidationRules(req, res) {
+        try {
+            const sheetName = req.user.role;
+            const column = req.params.column; // e.g., "A"
+
+            const validationRules = await googleSheetService.getColumnValidation(sheetName, column);
+
+            res.json({
+                sheet: sheetName,
+                column: column,
+                validationRules: validationRules
+            });
         } catch (error) {
             console.error(error);
             res.status(500).json({ error: error.message });
