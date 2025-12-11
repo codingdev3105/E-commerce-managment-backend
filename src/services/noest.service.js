@@ -20,21 +20,28 @@ class NoestService {
      */
     async _request(method, url, data = {}, config = {}) {
         try {
-            // Inject credentials into the request body
+            const isGet = method.toUpperCase() === 'GET';
             const payload = {
                 api_token: this.apiToken,
                 user_guid: this.userGuid,
                 ...data
             };
 
-            console.log(`🔵 Noest API Request [${method} ${url}]:`, JSON.stringify(payload, null, 2));
-
-            const response = await this.client.request({
+            const requestConfig = {
                 method,
                 url,
-                data: payload,
                 ...config
-            });
+            };
+
+            if (isGet) {
+                requestConfig.params = { ...payload, ...config.params };
+            } else {
+                requestConfig.data = payload;
+            }
+
+            console.log(`🔵 Noest API Request [${method} ${url}]:`, isGet ? JSON.stringify(requestConfig.params, null, 2) : JSON.stringify(requestConfig.data, null, 2));
+
+            const response = await this.client.request(requestConfig);
 
             console.log(`✅ Noest API Response [${method} ${url}]:`, response.data);
             return response.data;
@@ -100,33 +107,29 @@ class NoestService {
 
     // 9️⃣ getTrackingsInfo(trackingsArray)
     async getTrackingsInfo(trackingsArray) {
-        // L'API attend probablement un format spécifique, ex: { trackings: [...] }
-        // Le prompt dit params: trackingsArray. On envoie souvent sous forme d'objet.
-        // Supposons { trackings: [...] } ou le tableau direct selon doc. 
-        // Par sécurité, on envoie souvent { trackings: [...] } mais le prompt implique juste l'array.
-        // Je vais wrapper dans un objet si c'est POST.
+        // Supposons que POST est correct pour celui-ci car on envoie un array
         return this._request('POST', '/get/trackings/info', { trackings: trackingsArray });
     }
 
     // 🔟 getDesks()
     async getDesks() {
-        return this._request('POST', '/desks');
+        return this._request('GET', '/desks');
     }
 
     // 1️⃣1️⃣ getFees()
     async getFees() {
-        return this._request('POST', '/fees');
+        return this._request('GET', '/fees');
     }
 
     // 1️⃣2️⃣ getCommunes(wilaya_id)
     async getCommunes(wilaya_id = null) {
         const payload = wilaya_id ? { wilaya_id } : {};
-        return this._request('POST', '/get/communes', payload);
+        return this._request('GET', '/get/communes', payload);
     }
 
     // 1️⃣3️⃣ getWilayas()
     async getWilayas() {
-        return this._request('POST', '/get/wilayas');
+        return this._request('GET', '/get/wilayas');
     }
 }
 
