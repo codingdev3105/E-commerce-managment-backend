@@ -223,7 +223,21 @@ class NoestController {
     // 1️⃣1️⃣ Obtenir les tarifs
     async getFees(req, res) {
         try {
+            const { wilaya_id } = req.query;
             const result = await noestService.getFees();
+
+            if (wilaya_id) {
+                // Structure expected: result.tarifs.return[wilaya_id]
+                const allFees = result.tarifs?.return || {};
+                const feeInfo = allFees[wilaya_id];
+
+                if (feeInfo) {
+                    return res.json({ success: true, ...feeInfo });
+                } else {
+                    return res.status(404).json({ success: false, message: `Tarifs non trouvés pour la wilaya ${wilaya_id}` });
+                }
+            }
+
             res.json(result);
         } catch (error) {
             res.status(500).json({ success: false, message: error.message });
