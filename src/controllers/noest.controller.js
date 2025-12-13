@@ -51,24 +51,29 @@ class NoestController {
             }
 
             // === STEP 4: Build Payload ===
+            // === STEP 4: Build Payload ===
+            const cleanStr = (str) => (str || '').toString().trim();
+
             const noestOrderData = {
-                client: orderData.client,
-                phone: orderData.phone,
-                phone_2: orderData.phone_2,
-                adresse: orderData.address,
+                client: cleanStr(orderData.client),
+                phone: cleanStr(orderData.phone),
+                phone_2: cleanStr(orderData.phone_2),
+                adresse: cleanStr(orderData.address),
                 wilaya_id: orderData.wilaya,
-                commune: orderData.commune,
+                // If StopDesk, force empty commune to avoid validation errors on mismatched commune names
+                // The station_code should be sufficient for routing.
+                commune: orderData.isStopDesk ? '' : cleanStr(orderData.commune),
                 montant: orderData.amount,
-                remarque: orderData.note,
-                produit: orderData.product,
+                remarque: cleanStr(orderData.note),
+                produit: cleanStr(orderData.product),
                 type_id: 1,
                 poids: orderData.poids || '1',
                 stop_desk: orderData.isStopDesk ? 1 : 0,
-                reference: orderData.reference
+                reference: cleanStr(orderData.reference)
             };
 
             if (orderData.isStopDesk) {
-                noestOrderData.station_code = orderData.stationCode;
+                noestOrderData.station_code = cleanStr(orderData.stationCode);
             }
 
             // === STEP 5: Call API ===
@@ -104,6 +109,7 @@ class NoestController {
             const result = await noestService.createOrder(req.body);
             res.status(201).json(result);
         } catch (error) {
+            console.error('❌ [NoestController] Error:', error);
             res.status(500).json({ success: false, message: error.message });
         }
     }
