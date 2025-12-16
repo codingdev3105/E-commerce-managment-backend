@@ -135,7 +135,7 @@ class GoogleSheetService {
             await this.sheets.spreadsheets.values.append({
                 spreadsheetId: this.spreadsheetId,
                 range: `${sheetName}!A:Z`,
-                valueInputOption: 'USER_ENTERED',
+                valueInputOption: 'RAW',
                 resource: { values: [rowData] },
             });
         } catch (error) {
@@ -166,7 +166,7 @@ class GoogleSheetService {
             await this.sheets.spreadsheets.values.update({
                 spreadsheetId: this.spreadsheetId,
                 range: range,
-                valueInputOption: 'USER_ENTERED',
+                valueInputOption: 'RAW', // Use RAW to preserve leading zeros
                 resource: { values: [rowData] },
             });
         } catch (error) {
@@ -217,7 +217,7 @@ class GoogleSheetService {
             await this.sheets.spreadsheets.values.update({
                 spreadsheetId: this.spreadsheetId,
                 range: range,
-                valueInputOption: 'USER_ENTERED',
+                valueInputOption: 'RAW', // Use RAW for consistency
                 resource: { values: [[tracking]] },
             });
         } catch (error) {

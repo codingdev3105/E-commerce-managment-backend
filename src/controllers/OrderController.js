@@ -97,14 +97,24 @@ class OrderController {
             const finalAddress = isStopDesk ? stationName : address;
             const finalCommune = isStopDesk ? stationName : (commune || '');
 
+            // Format phone numbers to ensure leading zero (RAW mode will preserve it)
+            const formatPhone = (phoneNum) => {
+                console.log("phone",phoneNum);
+                console.log("tupeof phonenulber is : ",typeof phoneNum)
+                if (!phoneNum) return '';
+                const cleaned = phoneNum.toString().trim();
+                // If it doesn't start with 0, add it
+                return cleaned.startsWith('0') ? cleaned : `0${cleaned}`;
+            };
+
             // Logic mapping
             const newRow = [
                 state,      // 0: Etat
                 date,       // 1: Date
                 reference,  // 2: Reference
                 client,     // 3: Client
-                phone,      // 4: Phone
-                phone2 || '', // 5: Phone 2
+                formatPhone(phone),      // 4: Phone
+                formatPhone(phone2), // 5: Phone 2
                 finalAddress, // 6: Address (Station Name if Stop Desk)
                 finalCommune, // 7: Commune (Station Name if Stop Desk)
                 amount,     // 8: Amount
@@ -198,13 +208,21 @@ class OrderController {
             const finalAddress = isStopDesk ? stationName : address;
             const finalCommune = isStopDesk ? stationName : (commune || '');
 
+            // Format phone numbers to ensure leading zero (RAW mode will preserve it)
+            const formatPhone = (phoneNum) => {
+                if (!phoneNum) return '';
+                const cleaned = phoneNum.toString().trim();
+                // If it doesn't start with 0, add it
+                return cleaned.startsWith('0') ? cleaned : `0${cleaned}`;
+            };
+
             const updatedRow = [
                 newState,   // 0: Etat
                 date,       // 1: Date
                 reference,  // 2: Reference
                 client,     // 3: Client
-                phone,      // 4: Phone
-                phone2 || '', // 5: Phone 2
+                formatPhone(phone),      // 4: Phone
+                formatPhone(phone2), // 5: Phone 2
                 finalAddress, // 6: Address
                 finalCommune, // 7: Commune
                 amount,     // 8: Amount

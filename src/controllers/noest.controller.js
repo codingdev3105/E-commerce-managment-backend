@@ -54,10 +54,18 @@ class NoestController {
             // === STEP 4: Build Payload ===
             const cleanStr = (str) => (str || '').toString().trim();
 
+            // Format phone to ensure it starts with 0
+            const formatPhoneForNoest = (phone) => {
+                if (!phone) return '';
+                const cleaned = cleanStr(phone).replace(/'/g, ''); // Remove apostrophe if present
+                // If it starts with 0, return as is, otherwise add 0 prefix
+                return cleaned.startsWith('0') ? cleaned : `0${cleaned}`;
+            };
+
             const noestOrderData = {
                 client: cleanStr(orderData.client),
-                phone: cleanStr(orderData.phone),
-                phone_2: cleanStr(orderData.phone_2),
+                phone: formatPhoneForNoest(orderData.phone),
+                phone_2: formatPhoneForNoest(orderData.phone_2),
                 adresse: cleanStr(orderData.address),
                 wilaya_id: orderData.wilaya,
                 // If StopDesk, force empty commune to avoid validation errors on mismatched commune names
@@ -113,8 +121,6 @@ class NoestController {
             res.status(500).json({ success: false, message: error.message });
         }
     }
-
-
 
     // 2️⃣ Valider une commande
     async validateOrder(req, res) {
