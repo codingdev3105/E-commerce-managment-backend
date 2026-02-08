@@ -48,6 +48,7 @@ class OrderController {
 
             const formattedOrders = rows.slice(1).map((row, index) => ({
                 id: index + 2, // 1-based row index (header is 1)
+                rowId: index + 2, // Required by frontend for updates
                 state: safeGet(row, 0),
                 date: safeGet(row, 1),
                 reference: safeGet(row, 2),
