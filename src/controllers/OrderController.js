@@ -32,32 +32,45 @@ class OrderController {
             const rows = await googleSheetService.getAllRows(sheetName);
             if (!rows || rows.length === 0) {
                 return res.json([]);
+            }
+
+            const safeGet = (row, index) => (row[index] ? row[index].toString() : '');
+
+            // Determiner l'index de la colonne "Message Envoyé" dynamiquement
+            const headerRow = rows[0];
+            let messageSentIndex = 19;
+            if (headerRow) {
+                const foundIndex = headerRow.findIndex(h =>
+                    h && (h.toString().toLowerCase().includes('message') || h.toString().toLowerCase().includes('envoyé'))
+                );
+                if (foundIndex !== -1) messageSentIndex = foundIndex;
+            }
+
+            const formattedOrders = rows.slice(1).map((row, index) => ({
+                id: index + 2, // 1-based row index (header is 1)
+                state: safeGet(row, 0),
+                date: safeGet(row, 1),
                 reference: safeGet(row, 2),
-                    client: safeGet(row, 3),
-                        phone: safeGet(row, 4),
-                            phone2: safeGet(row, 5),
-                                address: safeGet(row, 6),
-                                    commune: safeGet(row, 7),
-                                        amount: safeGet(row, 8),
-                                            wilaya: safeGet(row, 9),
-                                                product: safeGet(row, 10),
-                                                    note: safeGet(row, 11),
-                                                        isPickup: safeGet(row, 13) === 'OUI',
-                                                            isExchange: safeGet(row, 14) === 'OUI',
-                                                                isStopDesk: safeGet(row, 15) === 'OUI',
-                                                                    stationCode: safeGet(row, 17),
-                                                                        tracking: safeGet(row, 18),
-                                                                            isMessageSent: (() => {
-                                                                                // Default to 19, or use detected index if valid
-                                                                                const idx = (typeof messageSentIndex !== 'undefined' && messageSentIndex !== -1) ? messageSentIndex : 19;
-                                                                                const rawVal = safeGet(row, idx);
-                                                                                const cleanVal = String(rawVal).trim().toUpperCase();
-                                                                                // Debug log for tracking rows
-                                                                                if (safeGet(row, 18)) {
-                                                                                    console.log(`Row ${index + 2} [${safeGet(row, 18)}]: MsgSent(idx=${idx})='${rawVal}' -> isOUI=${cleanVal === 'OUI'}`);
-                                                                                }
-                                                                                return cleanVal === 'OUI';
-                                                                            })()
+                client: safeGet(row, 3),
+                phone: safeGet(row, 4),
+                phone2: safeGet(row, 5),
+                address: safeGet(row, 6),
+                commune: safeGet(row, 7),
+                amount: safeGet(row, 8),
+                wilaya: safeGet(row, 9),
+                product: safeGet(row, 10),
+                note: safeGet(row, 11),
+                isPickup: safeGet(row, 13) === 'OUI',
+                isExchange: safeGet(row, 14) === 'OUI',
+                isStopDesk: safeGet(row, 15) === 'OUI',
+                stationCode: safeGet(row, 17),
+                tracking: safeGet(row, 18),
+                isMessageSent: (() => {
+                    const idx = messageSentIndex;
+                    const rawVal = safeGet(row, idx);
+                    const cleanVal = String(rawVal).trim().toUpperCase();
+                    return cleanVal === 'OUI';
+                })()
             }));
 
             res.json(formattedOrders);
