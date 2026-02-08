@@ -226,6 +226,41 @@ class GoogleSheetService {
         }
     }
 
+    // Convert 0-based column index to letter (e.g., 0 -> A, 25 -> Z, 26 -> AA)
+    getColumnLetter(columnIndex) {
+        let temp, letter = '';
+        while (columnIndex >= 0) {
+            temp = columnIndex % 26;
+            letter = String.fromCharCode(temp + 65) + letter;
+            columnIndex = Math.floor(columnIndex / 26) - 1;
+        }
+        return letter;
+    }
+
+    async updateCell(rowIndex, columnIndex, value, sheetName = 'ystore') {
+        await this.connect();
+        const columnLetter = this.getColumnLetter(columnIndex);
+        const range = `${sheetName}!${columnLetter}${rowIndex}`;
+
+        try {
+            await this.sheets.spreadsheets.values.update({
+                spreadsheetId: this.spreadsheetId,
+                range: range,
+                valueInputOption: 'RAW',
+                resource: { values: [[value]] },
+            });
+        } catch (error) {
+            console.error(`Error updating cell ${columnLetter}${rowIndex} in ${sheetName}:`, error);
+            throw error;
+        }
+    }
+
+    // Update Message Status for a specific order (Legacy/Hardcoded backup)
+    async updateMessageStatus(rowIndex, status, sheetName = 'ystore') {
+        // Fallback to column T (index 19) if used directly
+        return this.updateCell(rowIndex, 19, status, sheetName);
+    }
+
     // Get Column Validation Rules
     async getColumnValidation(sheetName = 'ystore', column = 'A') {
         await this.connect();

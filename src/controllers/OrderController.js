@@ -32,35 +32,37 @@ class OrderController {
             const rows = await googleSheetService.getAllRows(sheetName);
             if (!rows || rows.length === 0) {
                 return res.json([]);
-            }
-
-            const safeGet = (row, index) => row[index] || '';
-            const dataRows = rows.slice(1);
-
-            const formattedOrders = dataRows.map((row, index) => ({
-                rowId: index + 2,
-                state: safeGet(row, 0),
-                date: safeGet(row, 1),
                 reference: safeGet(row, 2),
-                client: safeGet(row, 3),
-                phone: safeGet(row, 4),
-                phone2: safeGet(row, 5),
-                address: safeGet(row, 6),
-                commune: safeGet(row, 7),
-                amount: safeGet(row, 8),
-                wilaya: safeGet(row, 9),
-                // New fields for display
-                // 13: PICK UP, 14: ECHANGE, 15: STOP DESK
-                isStopDesk: safeGet(row, 15) === 'OUI',
-                isExchange: safeGet(row, 14) === 'OUI',
-                isPickup: safeGet(row, 13) === 'OUI',
-                product: safeGet(row, 10), // Adding Product
-                note: safeGet(row, 11),    // Adding Note
-                stationCode: safeGet(row, 17), // Station Code for Stop Desk
-                tracking: safeGet(row, 18), // Tracking (column S)
+                    client: safeGet(row, 3),
+                        phone: safeGet(row, 4),
+                            phone2: safeGet(row, 5),
+                                address: safeGet(row, 6),
+                                    commune: safeGet(row, 7),
+                                        amount: safeGet(row, 8),
+                                            wilaya: safeGet(row, 9),
+                                                product: safeGet(row, 10),
+                                                    note: safeGet(row, 11),
+                                                        isPickup: safeGet(row, 13) === 'OUI',
+                                                            isExchange: safeGet(row, 14) === 'OUI',
+                                                                isStopDesk: safeGet(row, 15) === 'OUI',
+                                                                    stationCode: safeGet(row, 17),
+                                                                        tracking: safeGet(row, 18),
+                                                                            isMessageSent: (() => {
+                                                                                // Default to 19, or use detected index if valid
+                                                                                const idx = (typeof messageSentIndex !== 'undefined' && messageSentIndex !== -1) ? messageSentIndex : 19;
+                                                                                const rawVal = safeGet(row, idx);
+                                                                                const cleanVal = String(rawVal).trim().toUpperCase();
+                                                                                // Debug log for tracking rows
+                                                                                if (safeGet(row, 18)) {
+                                                                                    console.log(`Row ${index + 2} [${safeGet(row, 18)}]: MsgSent(idx=${idx})='${rawVal}' -> isOUI=${cleanVal === 'OUI'}`);
+                                                                                }
+                                                                                return cleanVal === 'OUI';
+                                                                            })()
             }));
+
             res.json(formattedOrders);
         } catch (error) {
+            console.error(error);
             res.status(500).json({ error: error.message });
         }
     }
@@ -79,56 +81,49 @@ class OrderController {
                 wilaya,
                 product,
                 note,
-                isStopDesk,  // Boolean from frontend
-                stationCode, // Code if stopdesk
-                stationName, // Name if stopdesk
-                isExchange   // Boolean from frontend
+                isStopDesk,
+                stationCode,
+                stationName,
+                isExchange
             } = req.body;
 
             const state = 'Nouvelle';
-            // Format date as DD-MM-YYYY
             const now = new Date();
             const date = `${String(now.getDate()).padStart(2, '0')}-${String(now.getMonth() + 1).padStart(2, '0')}-${now.getFullYear()}`;
-            const sheetName = req.user.role; // Use Role as sheet name
+            const sheetName = req.user.role;
 
-            // Define final address/commune
-            // If Stop Desk: Use Station Name for Address and Commune
-            // Else: Use provided Address and Commune
             const finalAddress = isStopDesk ? stationName : address;
             const finalCommune = isStopDesk ? stationName : (commune || '');
 
-            // Format phone numbers to ensure leading zero (RAW mode will preserve it)
             const formatPhone = (phoneNum) => {
-                console.log("phone",phoneNum);
-                console.log("tupeof phonenulber is : ",typeof phoneNum)
                 if (!phoneNum) return '';
                 const cleaned = phoneNum.toString().trim();
-                // If it doesn't start with 0, add it
                 return cleaned.startsWith('0') ? cleaned : `0${cleaned}`;
             };
 
-            // Logic mapping
             const newRow = [
-                state,      // 0: Etat
-                date,       // 1: Date
-                reference,  // 2: Reference
-                client,     // 3: Client
-                formatPhone(phone),      // 4: Phone
-                formatPhone(phone2), // 5: Phone 2
-                finalAddress, // 6: Address (Station Name if Stop Desk)
-                finalCommune, // 7: Commune (Station Name if Stop Desk)
-                amount,     // 8: Amount
-                wilaya,     // 9: Wilaya Code
-                product || '', // 10: Product
-                note || '',    // 11: Remarque
-                '1',        // 12: Poids (Always 1)
-                '',         // 13: PICK UP
-                isExchange ? 'OUI' : '', // 14: ECHANGE
-                isStopDesk ? 'OUI' : '', // 15: STOP DESK
-                '',         // 16: Ouvrir
-                isStopDesk ? stationCode : '', // 17: Code Station
-                ''          // 18: Tracking
+                state,
+                date,
+                reference,
+                client,
+                formatPhone(phone),
+                formatPhone(phone2),
+                finalAddress,
+                finalCommune,
+                amount,
+                wilaya,
+                product || '',
+                note || '',
+                '1',
+                '',
+                isExchange ? 'OUI' : '',
+                isStopDesk ? 'OUI' : '',
+                '',
+                isStopDesk ? stationCode : '',
+                '',
+                ''
             ];
+
             await googleSheetService.addRow(newRow, sheetName);
 
             res.status(201).json({
@@ -173,6 +168,7 @@ class OrderController {
 
             const oldState = safeGet(currentRow, 0);
             const oldTracking = safeGet(currentRow, 18);
+            const oldMessageStatus = safeGet(currentRow, 19); // Preserve Message Status
 
             const {
                 reference,
@@ -235,12 +231,53 @@ class OrderController {
                 isStopDesk ? 'OUI' : '', // 15: STOP DESK
                 '',         // 16: Ouvrir
                 isStopDesk ? stationCode : '', // 17: Code Station
-                newTracking // 18: Tracking (Preserved or Cleared)
+                newTracking, // 18: Tracking (Preserved or Cleared)
+                oldMessageStatus // 19: Message Status (Preserved)
             ];
 
             await googleSheetService.updateRow(parseInt(rowIndex), updatedRow, sheetName);
 
             res.json({ message: 'Commande modifiée' });
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ error: error.message });
+        }
+    }
+
+    // POST /api/commandes/:id/message-status
+    async updateMessageStatus(req, res) {
+        try {
+            const rowIndex = req.params.id;
+            if (!rowIndex || isNaN(parseInt(rowIndex))) {
+                throw new Error("Invalid Order ID provided");
+            }
+
+            const sheetName = req.user.role;
+            const status = req.body.status || 'OUI';
+
+            // 1. Fetch headers to find correct column
+            // We fetch all rows for simplicity and robustness, though headers-only fetch would be optimal
+            const rows = await googleSheetService.getAllRows(sheetName);
+            if (!rows || rows.length === 0) {
+                throw new Error("Empty sheet");
+            }
+
+            const headerRow = rows[0];
+            let messageSentIndex = 19; // Default T
+            if (headerRow) {
+                const foundIndex = headerRow.findIndex(h =>
+                    h && (h.toString().toLowerCase().includes('message') || h.toString().toLowerCase().includes('envoyé'))
+                );
+                if (foundIndex !== -1) {
+                    messageSentIndex = foundIndex;
+                    console.log(`[UpdateMsg] Detected 'Message Sent' column index: ${messageSentIndex}`);
+                } else {
+                    console.warn("[UpdateMsg] Could not auto-detect 'Message Sent' column. Defaulting to 19.");
+                }
+            }
+
+            await googleSheetService.updateCell(parseInt(rowIndex), messageSentIndex, status, sheetName);
+            res.json({ message: 'Statut message mis à jour', status: status, column: messageSentIndex });
         } catch (error) {
             console.error(error);
             res.status(500).json({ error: error.message });
