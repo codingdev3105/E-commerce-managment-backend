@@ -24,7 +24,7 @@ class AuthController {
             const token = jwt.sign(
                 { code: account.code, role: account.role },
                 JWT_SECRET,
-                { expiresIn: '2h' }
+                { expiresIn: '24h' }
             );
 
             res.json({ token, role: account.role });
