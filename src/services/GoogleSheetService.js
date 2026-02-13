@@ -66,7 +66,7 @@ class GoogleSheetService {
     }
 
     // Get All Rows (Dynamic Sheet)
-    async getAllRows(sheetName = 'ystore') { // Default to ystore if not provided
+    async getAllRows(sheetName = '') { // Default to ystore if not provided
         await this.connect();
 
         if (this.mockMode) {
@@ -123,7 +123,7 @@ class GoogleSheetService {
     }
 
     // Add Row (Dynamic Sheet)
-    async addRow(rowData, sheetName = 'ystore') {
+    async addRow(rowData, sheetName = '') {
         await this.connect();
 
         if (this.mockMode) {
@@ -156,7 +156,7 @@ class GoogleSheetService {
     }
 
     // Update Row
-    async updateRow(rowIndex, rowData, sheetName = 'ystore') {
+    async updateRow(rowIndex, rowData, sheetName = '') {
         await this.connect();
         // Google Sheets API is 1-indexed for range A1 notation
         // rowIndex comes as 2, 3, etc. (Directly matches Excel row number)
@@ -176,7 +176,7 @@ class GoogleSheetService {
     }
 
     // Delete Row
-    async deleteRow(rowIndex, sheetName = 'ystore') {
+    async deleteRow(rowIndex, sheetName = '') {
         await this.connect();
         const sheetId = await this.getSheetIdByName(sheetName);
 
@@ -208,7 +208,7 @@ class GoogleSheetService {
     }
 
     // Update Tracking for a specific order
-    async updateTracking(rowIndex, tracking, sheetName = 'ystore') {
+    async updateTracking(rowIndex, tracking, sheetName = '') {
         await this.connect();
         // Column S (19th column, 0-indexed = 18) is "Tracking" based on the header structure
         const range = `${sheetName}!S${rowIndex}`;
@@ -237,7 +237,7 @@ class GoogleSheetService {
         return letter;
     }
 
-    async updateCell(rowIndex, columnIndex, value, sheetName = 'ystore') {
+    async updateCell(rowIndex, columnIndex, value, sheetName = '') {
         await this.connect();
         const columnLetter = this.getColumnLetter(columnIndex);
         const range = `${sheetName}!${columnLetter}${rowIndex}`;
@@ -256,7 +256,7 @@ class GoogleSheetService {
     }
 
     // Update Message Status for a specific order (Legacy/Hardcoded backup)
-    async updateMessageStatus(rowIndex, status, sheetName = 'ystore') {
+    async updateMessageStatus(rowIndex, status, sheetName = '') {
         // Fallback to column T (index 19) if used directly
         return this.updateCell(rowIndex, 19, status, sheetName);
     }

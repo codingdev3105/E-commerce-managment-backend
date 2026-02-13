@@ -71,7 +71,8 @@ class OrderController {
                     const rawVal = safeGet(row, idx);
                     const cleanVal = String(rawVal).trim().toUpperCase();
                     return cleanVal === 'OUI';
-                })()
+                })(),
+                stationExpedition: safeGet(row, 20)
             }));
 
             res.json(formattedOrders);
@@ -98,7 +99,8 @@ class OrderController {
                 isStopDesk,
                 stationCode,
                 stationName,
-                isExchange
+                isExchange,
+                stationExpedition
             } = req.body;
 
             const state = 'Nouvelle';
@@ -135,7 +137,8 @@ class OrderController {
                 '',
                 isStopDesk ? stationCode : '',
                 '',
-                ''
+                '',
+                stationExpedition || ''
             ];
 
             await googleSheetService.addRow(newRow, sheetName);
@@ -199,7 +202,8 @@ class OrderController {
                 stationCode,
                 stationName,
                 isExchange,
-                state // Can update state too
+                state, // Can update state too
+                stationExpedition
             } = req.body;
 
             const date = req.body.date || safeGet(currentRow, 1); // Preserve date
@@ -246,7 +250,8 @@ class OrderController {
                 '',         // 16: Ouvrir
                 isStopDesk ? stationCode : '', // 17: Code Station
                 newTracking, // 18: Tracking (Preserved or Cleared)
-                oldMessageStatus // 19: Message Status (Preserved)
+                oldMessageStatus, // 19: Message Status (Preserved)
+                stationExpedition || safeGet(currentRow, 20) // 20: Station Expedition
             ];
 
             await googleSheetService.updateRow(parseInt(rowIndex), updatedRow, sheetName);

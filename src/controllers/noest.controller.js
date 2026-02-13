@@ -40,7 +40,8 @@ class NoestController {
                 note: safeGet(orderRow, 11),
                 poids: safeGet(orderRow, 12),
                 isStopDesk: safeGet(orderRow, 15) === 'OUI',
-                stationCode: safeGet(orderRow, 17)
+                stationCode: safeGet(orderRow, 17),
+                stationExpedition: safeGet(orderRow, 20)
             };
             console.log(`✅ [NoestController] Order data:`, orderData);
             if (!orderData.client || !orderData.phone || !orderData.wilaya) {
@@ -50,7 +51,6 @@ class NoestController {
                 return res.status(400).json({ error: 'StopDesk order requires a station code' });
             }
 
-            // === STEP 4: Build Payload ===
             // === STEP 4: Build Payload ===
             const cleanStr = (str) => (str || '').toString().trim();
 
@@ -77,7 +77,8 @@ class NoestController {
                 type_id: 1,
                 poids: orderData.poids || '1',
                 stop_desk: orderData.isStopDesk ? 1 : 0,
-                reference: cleanStr(orderData.reference)
+                reference: cleanStr(orderData.reference),
+                station_expedition: cleanStr(orderData.stationExpedition) // Added origin station
             };
 
             if (orderData.isStopDesk) {
