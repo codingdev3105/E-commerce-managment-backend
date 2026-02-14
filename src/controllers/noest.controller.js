@@ -95,7 +95,7 @@ class NoestController {
 
             // === STEP 6: Update Sheet ===
             const updatedRow = [...orderRow];
-            updatedRow[0] = 'System';
+            updatedRow[0] = 'Upload';
             updatedRow[18] = result.tracking;
             await googleSheetService.updateRow(rowId, updatedRow, sheetName);
 

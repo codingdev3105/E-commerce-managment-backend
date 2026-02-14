@@ -209,16 +209,6 @@ class OrderController {
             const date = req.body.date || safeGet(currentRow, 1); // Preserve date
             const newState = state || oldState;
 
-            // Logic for Tracking: Preserve unless System -> Other
-            let newTracking = oldTracking;
-
-            const isSystem = (s) => s && (s.toLowerCase().includes('system') || s.toLowerCase().includes('envoyer'));
-
-            // If changing FROM System TO something else (e.g. Annuler), clear tracking
-            if (isSystem(oldState) && newState !== oldState) {
-                newTracking = '';
-            }
-
             const finalAddress = isStopDesk ? stationName : address;
             const finalCommune = isStopDesk ? stationName : (commune || '');
 
@@ -249,7 +239,7 @@ class OrderController {
                 isStopDesk ? 'OUI' : '', // 15: STOP DESK
                 '',         // 16: Ouvrir
                 isStopDesk ? stationCode : '', // 17: Code Station
-                newTracking, // 18: Tracking (Preserved or Cleared)
+                oldTracking, // 18: Tracking (Preserved or Cleared)
                 oldMessageStatus, // 19: Message Status (Preserved)
                 stationExpedition || safeGet(currentRow, 20) // 20: Station Expedition
             ];
