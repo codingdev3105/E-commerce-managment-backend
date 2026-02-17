@@ -308,7 +308,6 @@ class GoogleSheetService {
         } catch (error) {
             console.error(`Error getting validation rules for ${sheetName}!${column}:`, error);
             throw error;
-            throw error;
         }
     }
 

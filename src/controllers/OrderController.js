@@ -1,4 +1,4 @@
-const googleSheetService = require('../services/googleSheetService');
+const googleSheetService = require('../services/GoogleSheetService');
 
 class OrderController {
 
@@ -66,12 +66,6 @@ class OrderController {
                 isStopDesk: safeGet(row, 15) === 'OUI',
                 stationCode: safeGet(row, 17),
                 tracking: safeGet(row, 18),
-                isMessageSent: (() => {
-                    const idx = messageSentIndex;
-                    const rawVal = safeGet(row, idx);
-                    const cleanVal = String(rawVal).trim().toUpperCase();
-                    return cleanVal === 'OUI';
-                })(),
                 isMessageSent: (() => {
                     const idx = messageSentIndex;
                     const rawVal = safeGet(row, idx);
