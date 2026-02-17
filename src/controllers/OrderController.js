@@ -1,4 +1,4 @@
-const googleSheetService = require('../services/GoogleSheetService');
+const googleSheetService = require('../services/googleSheetService');
 
 class OrderController {
 
@@ -72,7 +72,14 @@ class OrderController {
                     const cleanVal = String(rawVal).trim().toUpperCase();
                     return cleanVal === 'OUI';
                 })(),
-                stationExpedition: safeGet(row, 20)
+                isMessageSent: (() => {
+                    const idx = messageSentIndex;
+                    const rawVal = safeGet(row, idx);
+                    const cleanVal = String(rawVal).trim().toUpperCase();
+                    return cleanVal === 'OUI';
+                })(),
+                stationExpedition: safeGet(row, 20),
+                isShipped: safeGet(row, 21) === 'OUI' // Column V (index 21)
             }));
 
             res.json(formattedOrders);
@@ -138,7 +145,8 @@ class OrderController {
                 isStopDesk ? stationCode : '',
                 '',
                 '',
-                stationExpedition || ''
+                stationExpedition || '',
+                '' // Column V: isShipped (Initially empty)
             ];
 
             await googleSheetService.addRow(newRow, sheetName);
@@ -241,7 +249,8 @@ class OrderController {
                 isStopDesk ? stationCode : '', // 17: Code Station
                 oldTracking, // 18: Tracking (Preserved or Cleared)
                 oldMessageStatus, // 19: Message Status (Preserved)
-                stationExpedition || safeGet(currentRow, 20) // 20: Station Expedition
+                stationExpedition || safeGet(currentRow, 20), // 20: Station Expedition
+                safeGet(currentRow, 21) // 21: isShipped (Preserve existing value)
             ];
 
             await googleSheetService.updateRow(parseInt(rowIndex), updatedRow, sheetName);
@@ -306,6 +315,25 @@ class OrderController {
                 column: column,
                 validationRules: validationRules
             });
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ error: error.message });
+        }
+    }
+
+    async updateShippedStatus(req, res) {
+        try {
+            const rowIndex = req.params.id;
+            const sheetName = req.user.role;
+            const status = req.body.status || 'OUI';
+            const columnIndex = 21; // Column V is index 21 (0-based)
+
+            if (!rowIndex || isNaN(parseInt(rowIndex))) {
+                return res.status(400).json({ error: "Invalid Order ID" });
+            }
+
+            await googleSheetService.updateCell(parseInt(rowIndex), columnIndex, status, sheetName);
+            res.json({ message: 'Statut expédition mis à jour', status: status });
         } catch (error) {
             console.error(error);
             res.status(500).json({ error: error.message });

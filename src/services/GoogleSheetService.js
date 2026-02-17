@@ -35,8 +35,8 @@ class GoogleSheetService {
 
         // Mock Mode
         if (this.mockMode) {
-            // Mock accounts: code '123' -> role 'ystore', '456' -> role 'oran'
-            if (code === '123') return { code: '123', role: 'ystore' };
+            // Mock accounts: code '123' -> role '', '456' -> role 'oran'
+            if (code === '123') return { code: '123', role: '' };
             if (code === '456') return { code: '456', role: 'oran' };
             return null;
         }
@@ -66,7 +66,7 @@ class GoogleSheetService {
     }
 
     // Get All Rows (Dynamic Sheet)
-    async getAllRows(sheetName = '') { // Default to ystore if not provided
+    async getAllRows(sheetName = '') { // Default to  if not provided
         await this.connect();
 
         if (this.mockMode) {
@@ -262,7 +262,7 @@ class GoogleSheetService {
     }
 
     // Get Column Validation Rules
-    async getColumnValidation(sheetName = 'ystore', column = 'A') {
+    async getColumnValidation(sheetName = '', column = 'A') {
         await this.connect();
 
         if (this.mockMode) {
@@ -308,6 +308,98 @@ class GoogleSheetService {
         } catch (error) {
             console.error(`Error getting validation rules for ${sheetName}!${column}:`, error);
             throw error;
+            throw error;
+        }
+    }
+
+    // Update Row Color
+    async updateRowColor(rowIndex, color, sheetName = '') {
+        await this.connect();
+        const sheetId = await this.getSheetIdByName(sheetName);
+
+        // Convert hex to rgb (0-1 range)
+        let red = 1, green = 1, blue = 1; // Default white
+        if (color === 'gray') { red = 0.9; green = 0.9; blue = 0.9; }
+        else if (color === 'red') { red = 1; green = 0.8; blue = 0.8; }
+        else if (color === 'green') { red = 0.8; green = 1; blue = 0.8; }
+        else if (color === 'blue') { red = 0.8; green = 0.9; blue = 1; }
+        else if (color === 'yellow') { red = 1; green = 1; blue = 0.8; }
+        else if (color.startsWith('#')) {
+            // Hex parsing
+            const r = parseInt(color.slice(1, 3), 16) / 255;
+            const g = parseInt(color.slice(3, 5), 16) / 255;
+            const b = parseInt(color.slice(5, 7), 16) / 255;
+            if (!isNaN(r)) red = r;
+            if (!isNaN(g)) green = g;
+            if (!isNaN(b)) blue = b;
+        }
+
+        const startIndex = rowIndex - 1; // 0-indexed for API
+
+        try {
+            await this.sheets.spreadsheets.batchUpdate({
+                spreadsheetId: this.spreadsheetId,
+                resource: {
+                    requests: [{
+                        repeatCell: {
+                            range: {
+                                sheetId: sheetId,
+                                startRowIndex: startIndex,
+                                endRowIndex: startIndex + 1,
+                                startColumnIndex: 0,
+                                endColumnIndex: 20 // Adjust as needed, covers A-T
+                            },
+                            cell: {
+                                userEnteredFormat: {
+                                    backgroundColor: {
+                                        red: red,
+                                        green: green,
+                                        blue: blue
+                                    }
+                                }
+                            },
+                            fields: 'userEnteredFormat.backgroundColor'
+                        }
+                    }]
+                }
+            });
+        } catch (error) {
+            console.error(`Error updating row color for row ${rowIndex}:`, error);
+            // Non-critical, don't throw to avoid blocking main flow
+        }
+    }
+
+    // Get Row Color
+    async getRowColor(rowIndex, sheetName = '') {
+        await this.connect();
+
+        try {
+            const sheetId = await this.getSheetIdByName(sheetName);
+            const response = await this.sheets.spreadsheets.get({
+                spreadsheetId: this.spreadsheetId,
+                ranges: [`${sheetName}!A${rowIndex}:A${rowIndex}`],
+                includeGridData: true
+            });
+
+            const rowData = response.data.sheets[0].data[0].rowData;
+            if (rowData && rowData.length > 0) {
+                const cell = rowData[0].values[0];
+                if (cell.userEnteredFormat && cell.userEnteredFormat.backgroundColor) {
+                    const color = cell.userEnteredFormat.backgroundColor;
+                    // Check if it matches gray (approx)
+                    if (color.red > 0.8 && color.red < 1 && color.green > 0.8 && color.green < 1 && color.blue > 0.8 && color.blue < 1) {
+                        return 'gray';
+                    }
+                    if (color.red > 0.9 && color.green < 0.9 && color.blue < 0.9) return 'red';
+                    if (color.green > 0.9 && color.red < 0.9 && color.blue < 0.9) return 'green';
+                    // Return raw object if no simple match
+                    return color;
+                }
+            }
+            return null; // Default/White
+        } catch (error) {
+            console.error(`Error getting row color for row ${rowIndex}:`, error);
+            return null;
         }
     }
 }
