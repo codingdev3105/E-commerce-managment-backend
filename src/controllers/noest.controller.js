@@ -216,9 +216,37 @@ class NoestController {
         try {
             const { trackingsArray } = req.body;
             if (!Array.isArray(trackingsArray)) return res.status(400).json({ success: false, message: "trackingsArray must be an array" });
-            const result = await noestService.getTrackingsInfo(trackingsArray);
-            res.json(result);
+
+            const chunkSize = 50;
+            let allResults = [];
+
+            console.log(`[NoestController] Fetching tracking info for ${trackingsArray.length} items in chunks of ${chunkSize}`);
+
+            for (let i = 0; i < trackingsArray.length; i += chunkSize) {
+                const chunk = trackingsArray.slice(i, i + chunkSize);
+                try {
+                    const chunkResult = await noestService.getTrackingsInfo(chunk);
+
+                    if (Array.isArray(chunkResult)) {
+                        allResults = allResults.concat(chunkResult);
+                    } else if (chunkResult && typeof chunkResult === 'object') {
+                        if (chunkResult.success !== undefined && Array.isArray(chunkResult.data)) {
+                            allResults = allResults.concat(chunkResult.data);
+                        } else if (chunkResult.trackings && Array.isArray(chunkResult.trackings)) {
+                            allResults = allResults.concat(chunkResult.trackings);
+                        } else {
+                            // Extract values if it's a map/object of trackings
+                            allResults = allResults.concat(Object.values(chunkResult));
+                        }
+                    }
+                } catch (err) {
+                    console.error(`❌ [NoestController] Erreur sur le chunk ${i} à ${i + chunkSize}:`, err.message);
+                }
+            }
+
+            res.json(allResults);
         } catch (error) {
+            console.error('❌ [NoestController] Error:', error);
             res.status(500).json({ success: false, message: error.message });
         }
     }
