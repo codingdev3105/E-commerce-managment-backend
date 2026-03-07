@@ -74,7 +74,7 @@ class NoestController {
                 montant: orderData.amount,
                 remarque: cleanStr(orderData.note),
                 produit: cleanStr(orderData.product),
-                type_id: 1,
+                type_id: safeGet(orderRow, 14) === 'OUI' ? 2 : 1, // Colonne O (index 14) pour "echange"
                 poids: orderData.poids || '1',
                 stop_desk: orderData.isStopDesk ? 1 : 0,
                 reference: cleanStr(orderData.reference),
