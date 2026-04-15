@@ -106,7 +106,7 @@ class OrderController {
 
             const state = 'Nouvelle';
             const now = new Date();
-            const date = `${String(now.getDate()).padStart(2, '0')}-${String(now.getMonth() + 1).padStart(2, '0')}-${now.getFullYear()}`;
+            const date = `${String(now.getDate()).padStart(2, '0')}-${String(now.getMonth() + 1).padStart(2, '0')}-${now.getFullYear()} à ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
             const sheetName = req.user.role;
 
             const finalAddress = isStopDesk ? stationName : address;
